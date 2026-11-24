@@ -1,17 +1,30 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 function ContenidoReceta() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = searchParams.get("id");
+  const toastTimerRef = useRef(null);
 
   const [receta, setReceta] = useState(null);
   const [esFavorito, setEsFavorito] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [mensajeError, setMensajeError] = useState("");
+
+  // Estados para Toast y Confirmación
+  const [toast, setToast] = useState(null);
+  const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
+
+  const mostrarToast = (texto, tipo = "agregado") => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ texto, tipo });
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
 
   useEffect(() => {
     if (!id) {
@@ -25,7 +38,6 @@ function ContenidoReceta() {
       const cacheRecientes =
         JSON.parse(localStorage.getItem("chef_recetas_cache")) || [];
 
-      // 1. Buscar en favoritos o en las últimas recetas cargadas en pantalla
       const encontradaLocal =
         guardados.find((item) => item.idMeal === id) ||
         cacheRecientes.find((item) => item.idMeal === id);
@@ -37,7 +49,6 @@ function ContenidoReceta() {
         return;
       }
 
-      // 2. Si no está en localStorage, pedirla a la API
       try {
         const res = await fetch(
           `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`
@@ -58,27 +69,43 @@ function ContenidoReceta() {
     };
 
     cargarReceta();
+
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
   }, [id]);
 
   const toggleFavorito = () => {
     if (!receta) return;
-    const guardados = JSON.parse(localStorage.getItem("chef_favoritos")) || [];
-    let nuevosFavoritos;
 
     if (esFavorito) {
-      nuevosFavoritos = guardados.filter((f) => f.idMeal !== receta.idMeal);
-      setEsFavorito(false);
-    } else {
-      nuevosFavoritos = [...guardados, receta];
-      setEsFavorito(true);
-      if ("caches" in window) {
-        caches.open("themealdb-images").then((cache) => {
-          cache.add(receta.strMealThumb).catch(() => {});
-        });
-      }
+      setMostrarConfirmar(true);
+      return;
+    }
+
+    const guardados = JSON.parse(localStorage.getItem("chef_favoritos")) || [];
+    const nuevosFavoritos = [...guardados, receta];
+    setEsFavorito(true);
+
+    if ("caches" in window) {
+      caches.open("themealdb-images").then((cache) => {
+        cache.add(receta.strMealThumb).catch(() => {});
+      });
     }
 
     localStorage.setItem("chef_favoritos", JSON.stringify(nuevosFavoritos));
+    mostrarToast(`⭐ "${receta.strMeal}" agregada a favoritos`, "agregado");
+  };
+
+  const confirmarQuitarFavorito = () => {
+    if (!receta) return;
+    const guardados = JSON.parse(localStorage.getItem("chef_favoritos")) || [];
+    const nuevosFavoritos = guardados.filter((f) => f.idMeal !== receta.idMeal);
+
+    setEsFavorito(false);
+    setMostrarConfirmar(false);
+    localStorage.setItem("chef_favoritos", JSON.stringify(nuevosFavoritos));
+    mostrarToast(`🗑️ "${receta.strMeal}" quitada de favoritos`, "eliminado");
   };
 
   const obtenerIngredientes = (datosReceta) => {
@@ -152,6 +179,47 @@ function ContenidoReceta() {
           </article>
         )}
       </main>
+
+      {/* Modal de Confirmación al quitar favorito */}
+      {mostrarConfirmar && receta && (
+        <div
+          onClick={() => setMostrarConfirmar(false)}
+          className="confirm-overlay"
+        >
+          <div onClick={(e) => e.stopPropagation()} className="confirm-box">
+            <h3>¿Quitar de favoritos?</h3>
+            <p>
+              ¿Seguro que deseas eliminar <strong>{receta.strMeal}</strong> de
+              tu lista sin conexión?
+            </p>
+            <div className="confirm-botones">
+              <button
+                onClick={() => setMostrarConfirmar(false)}
+                className="btn-cancelar"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarQuitarFavorito}
+                className="btn-confirmar-eliminar"
+              >
+                Sí, quitar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast flotante */}
+      {toast && (
+        <div
+          className={`toast-notificacion ${
+            toast.tipo === "eliminado" ? "eliminado" : ""
+          }`}
+        >
+          {toast.texto}
+        </div>
+      )}
     </div>
   );
 }
