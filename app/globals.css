@@ -1,26 +1,332 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f4f6f8;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+/* Encabezado y barra superior igual al boceto */
+.header {
+  background-color: #f97316;
+  color: white;
+  padding: 18px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.header-top h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.btn-instalar {
+  background: white;
+  color: #ea580c;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Fila superior: [ Input ] [ Buscar ] a la izquierda y [ Favoritos ] a la derecha */
+.barra-superior {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-busqueda {
+  display: flex;
+  flex: 1;
+  min-width: 260px;
+  max-width: 650px;
+  gap: 8px;
+}
+
+.input-buscar {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: white;
+  color: #1e293b;
+  font-size: 1rem;
+  outline: none;
+}
+
+.btn-buscar {
+  background-color: #1e293b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-buscar:hover {
+  background-color: #334155;
+}
+
+.btn-favoritos {
+  background-color: #fde047;
+  color: #1e293b;
+  border: 2px solid transparent;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-favoritos.activo {
+  background-color: #1e293b;
+  color: #fde047;
+  border-color: #fde047;
+}
+
+/* Contenedor principal y cuadrícula de 3 columnas como en el boceto */
+.main-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.titulo-seccion {
+  font-size: 1.25rem;
+  margin-bottom: 18px;
+  color: #334155;
+}
+
+.grid-recetas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+@media (max-width: 850px) {
+  .grid-recetas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 550px) {
+  .grid-recetas {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tarjeta (Card) de receta */
+.card {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.card-img {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  display: block;
+}
+
+.card-body {
+  padding: 14px 16px;
+}
+
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.card-meta {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* Botón Check / Favorito en la esquina superior derecha de cada card */
+.btn-check-fav {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid white;
+  background-color: rgba(15, 23, 42, 0.6);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.btn-check-fav.guardado {
+  background-color: #10b981;
+}
+
+/* Modal de receta completa */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 14px;
+  max-width: 620px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px;
+  position: relative;
+}
+
+.btn-cerrar-modal {
+  position: sticky;
+  top: 0;
+  float: right;
+  background: #e2e8f0;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal-img {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 12px 0;
+}
+
+.lista-ingredientes {
+  margin: 10px 0 16px 20px;
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.texto-instrucciones {
+  white-space: pre-line;
+  line-height: 1.6;
+  font-size: 0.92rem;
+  color: #334155;
+}
+/* Estilos para app/receta/page.js */
+.header-detalle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-volver {
+  background: white;
+  color: #ea580c;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.detalle-card {
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.detalle-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.detalle-titulo {
+  font-size: 1.6rem;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.btn-fav-detalle {
+  background-color: #1e293b;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-fav-detalle.guardado {
+  background-color: #10b981;
+}
+
+.detalle-img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.detalle-seccion {
+  margin-top: 20px;
+}
+
+.detalle-seccion h3 {
+  font-size: 1.15rem;
+  margin-bottom: 10px;
+  color: #ea580c;
 }
